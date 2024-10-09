@@ -55,15 +55,17 @@ for data_name in ['concrete','wine','airfoil','energy','housing','solar','forest
 
             val=False
 
-            X_train_, X_val, Y_train_, Y_val = train_test_split(X_train, Y_train,test_size=2/9,random_state=42)
-            train_data={'X':X_train,'Y':Y_train}
-            train_part={'X':X_train_,'Y':Y_train_}
-            val_data={'X':X_val,'Y':Y_val}
+            X_train_f, X_train_L, Y_train_f, Y_train_L = train_test_split(X_train, Y_train, test_size=4/9, random_state=42)
+
+            train_data = {'X': X_train, 'Y': Y_train}
+            train_data_f = {'X': X_train_f, 'Y': Y_train_f}
+            train_data_L = {'X': X_train_L, 'Y': Y_train_L}
             test_data={'X':X_test,'Y':Y_test}
-            mnet_full=train_full_NN(train_data)
+
+            mnet_full=train_full_NN(train_data_f)
             print('---')
             print('NN+knnRej')
-            loss,coverage=get_test_assignments_full_no_wid(train_data,test_data,mnet_full,constraint,cost)
+            loss,coverage=get_test_assignments_full_no_wid(train_data_L,test_data,mnet_full,constraint,cost)
             print('loss:',loss)
             full_NN_loss.append(loss)
             full_NN_coverage.append(coverage)
@@ -92,25 +94,23 @@ for data_name in ['concrete','wine','airfoil','energy','housing','solar','forest
             print('---')
 
             print('NN+SelRej')
-            mnet=train_full_NN(train_data)
-            sel_net=train_sel_head_cost(train_data,mnet,cost)
+            sel_net=train_sel_head_cost(train_data_L,mnet_full,cost)
             loss,coverage=test_Sel_NN(test_data,sel_net,cost,no_aux=True)
             full_sel_loss.append(loss)
             full_sel_coverage.append(coverage)
             print('---')
 
             print('NN+LogRej')
-            thrs_list=[0.5]
-            mnet,rej_net,thrs=train_val_logis_head(train_data,constraint,cost,thrs_list)
-            loss,coverage=test_logis_head(test_data,mnet,rej_net,cost,thrs)
+            thrs = 0.5
+            rej_net = train_head(train_data_L, mnet_full, 'logis', constraint, cost)
+            loss,coverage=test_logis_head(test_data,mnet_full,rej_net,cost,thrs)
             full_logis_loss.append(loss)
             full_logis_coverage.append(coverage)
             print('---')
 
             print('NN+LossRej')
-            mnet=train_full_NN(train_data)
-            loss_net,thrs=train_head(train_data,mnet,'loss',constraint,cost)
-            loss,coverage=test_loss_head_NN(test_data,mnet,loss_net,thrs,cost)
+            loss_net,thrs=train_head(train_data_L,mnet_full,'loss',constraint,cost)
+            loss,coverage=test_loss_head_NN(test_data,mnet_full,loss_net,thrs,cost)
             full_loss_loss.append(loss)
             full_loss_coverage.append(coverage)
             
@@ -132,10 +132,20 @@ for data_name in ['concrete','wine','airfoil','energy','housing','solar','forest
     print('_____________________________________________________________')
     print('_____________________________________________________________')
     print('____________________Finishied_________________________')
-    df=pd.DataFrame({'NN+knnRej':full_NN_loss_L,'NN+SelRej':full_sel_loss_L,'NN+LossRej':full_loss_loss_L,
-                     'NN+LogRej':full_logis_loss_L,'Triage':NN_triage_loss_L,
-                     'SelNN':sel_NN_loss_L,'kNN':knn_loss_L,
-                     'NN+knnRej':full_NN_coverage_L,'NN+SelRej':full_sel_coverage_L,'NN+LossRej':full_logis_coverage_L,
-                     'NN+LogRej':full_logis_coverage_L,'Triage':NN_triage_coverage_L,
-                     'SelNN':sel_NN_coverage_L,'kNN':knn_coverage_L, },index=cost_list)
+    df = pd.DataFrame({
+        'NN+knnRej': full_NN_loss_L,
+        'NN+SelRej': full_sel_loss_L,
+        'NN+LossRej': full_loss_loss_L,
+        'NN+LogRej': full_logis_loss_L,
+        'Triage': NN_triage_loss_L,
+        'SelNN': sel_NN_loss_L,
+        'kNN': knn_loss_L,
+        'NN+knnRej_coverage': full_NN_coverage_L,
+        'NN+SelRej_coverage': full_sel_coverage_L,
+        'NN+LossRej_coverage': full_loss_coverage_L,
+        'NN+LogRej_coverage': full_logis_coverage_L,
+        'Triage_coverage': NN_triage_coverage_L,
+        'SelNN_coverage': sel_NN_coverage_L,
+        'kNN_coverage': knn_coverage_L
+    }, index=cost_list)
     df.to_csv(data_name+'_new.csv')

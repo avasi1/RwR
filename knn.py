@@ -65,13 +65,14 @@ def get_ECDF(val_data,var_knn):
 
 
 def train_KNN_RwR(data):
-    X_train, X_val, Y_train, Y_val = train_test_split(data['X'], data['Y'],test_size=0.2,random_state=42)
-    train_data={'X':X_train,'Y':Y_train}
-    val_data={'X':X_val,'Y':Y_val}
-    knn,var_loss=train_KNN(train_data)
-    var_knn=train_var_knn(train_data,var_loss)
-    ecdf=get_ECDF(val_data,var_knn)
-    return knn,var_knn,ecdf
+    X_train, X_val, Y_train, Y_val = train_test_split(data['X'], data['Y'], test_size=4/9, random_state=42)
+    train_data = {'X': X_train, 'Y': Y_train}
+    val_data = {'X': X_val, 'Y': Y_val}
+    knn, _ = train_KNN(train_data)
+    var_loss = (knn.predict(val_data['X']) - val_data['Y']) ** 2
+    var_knn = train_var_knn(val_data, var_loss)
+    ecdf = get_ECDF(val_data, var_knn)
+    return knn, var_knn, ecdf
 
 
 def test_KNN_RwR(data,knn,var_knn,ecdf,constraint,cost=0):

@@ -430,7 +430,7 @@ def get_test_assignments_full(train_data,test_data,mnet,constraint,wid=2,cost=0)
                     print('error, no samples to machine')
                 return np.mean(machine_loss[to_machine].cpu().numpy())
             else:
-                human_candidates =torch.where(machine_loss>cost)[0]
+                human_candidates =torch.where(gprediction>cost)[0]
                 to_machine = [i for i in range(test_X.shape[0]) if i not in human_candidates ]
                 to_human = [i for i in range(test_X.shape[0]) if i not in to_machine]
                 if len(to_machine)!=0:
@@ -466,14 +466,14 @@ def get_test_assignments_full_no_wid(train_data,test_data,mnet,constraint,cost=0
 
 
 def train_head(data,pretrain_model,train_mode,constraint,cost=0):
-    device = 'cuda'
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if train_mode=='loss':
-        model=loss_head(pretrain_model).cuda()
+        model=loss_head(pretrain_model).to(device)
     if train_mode=='sel':
-        model=sel_head(pretrain_model).cuda()
+        model=sel_head(pretrain_model).to(device)
 
     if train_mode=='logis':
-        model=logis_head(pretrain_model).cuda()
+        model=logis_head(pretrain_model).to(device)
     X_train=data['X']
     Y_train=data['Y']
         #freeze the pretrained model
@@ -576,7 +576,7 @@ def train_val_logis_head(data,constraint,cost=0,thrs_list=[0.5]):
     idx=np.argmin(loss_L)
     return mnet,rej_net,thrs_list[idx]
 def test_logis_head(test_data,mnet,logis_net,cost,thrs=0.5):
-    device='cuda'
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     with torch.no_grad():
 
             loss_func_machine = torch.nn.MSELoss(reduction='none')
